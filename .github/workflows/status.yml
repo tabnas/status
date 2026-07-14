@@ -1,0 +1,52 @@
+# Target: tabnas/status -> .github/workflows/status.yml
+#
+# Collects org status daily and deploys the dashboard to GitHub Pages.
+# One-time setup in tabnas/status: Settings -> Pages -> Source: GitHub Actions.
+# Optional: add a fine-grained org read token as STATUS_READ_TOKEN so
+# branch-protection checks stop reporting "unknown".
+
+name: status
+
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Collect
+        run: node collector/collect.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.STATUS_READ_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Render
+        run: node site/render.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
