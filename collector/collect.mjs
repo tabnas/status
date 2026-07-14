@@ -80,6 +80,15 @@ async function fileText(repo, path, branch) {
   return Buffer.from(body.content, 'base64').toString('utf8')
 }
 
+// Count open pull requests. The repo object's open_issues_count lumps
+// issues and PRs together, so we count PRs directly and subtract. per_page=100
+// with a length count is exact for this org (no repo has >100 open PRs);
+// if that ever changes the count saturates at 100 rather than lying low.
+async function openPullCount(repo) {
+  const { body } = await gh(`/repos/${ORG}/${repo}/pulls?state=open&per_page=100`)
+  return body ? body.length : 0
+}
+
 async function latestRun(repo, branch) {
   const { body } = await gh(
     `/repos/${ORG}/${repo}/actions/runs?branch=${branch}&status=completed&per_page=1`
@@ -159,13 +168,17 @@ async function inspectRepo(r) {
   const paths = await tree(repo, branch)
   const has = (p) => paths.includes(p)
 
-  const [run, tag, npm, prot, wf] = await Promise.all([
+  const [run, tag, npm, prot, wf, openPRs] = await Promise.all([
     latestRun(repo, branch),
     goTag(repo),
     INFRA.has(repo) ? null : npmVersion(repo),
     protection(repo, branch),
     inspectWorkflows(repo, branch, paths),
+    openPullCount(repo),
   ])
+
+  const open_prs = openPRs
+  const open_issues = Math.max(0, (r.open_issues_count ?? 0) - open_prs)
 
   const checks = {
     readme: has('README.md'),
@@ -197,6 +210,8 @@ async function inspectRepo(r) {
     description: r.description,
     tier: INFRA.has(repo) ? 'infra' : CORE.has(repo) ? 'core' : 'supported',
     ci: run,
+    open_prs,
+    open_issues,
     npm_version: npm,
     go_version: tag,
     version_drift: npm && tag ? npm !== tag : null,
@@ -235,6 +250,8 @@ const report = {
     fully_compliant: results.filter(
       (r) => r.score && r.score.known > 0 && r.score.pass === r.score.known
     ).length,
+    open_prs: results.reduce((n, r) => n + (r.open_prs || 0), 0),
+    open_issues: results.reduce((n, r) => n + (r.open_issues || 0), 0),
   },
 }
 
