@@ -36,7 +36,7 @@ const rows = report.repos
   .map((r) => {
     if (r.error) {
       return `<tr><td><a href="https://github.com/${report.org}/${esc(r.repo)}">${esc(r.repo)}</a></td>
-        <td colspan="${CHECK_COLS.length + 4}" class="bad">collect error: ${esc(r.error)}</td></tr>`
+        <td colspan="${CHECK_COLS.length + 6}" class="bad">collect error: ${esc(r.error)}</td></tr>`
     }
     const drift =
       r.version_drift === null
@@ -47,11 +47,15 @@ const rows = report.repos
     const ci = r.ci
       ? `<a href="${esc(r.ci.url)}">${r.ci.conclusion === 'success' ? '✓' : '✗'}</a>`
       : '–'
+    const count = (n, kind) =>
+      `<td class="num ${n ? '' : 'na'}"><a href="https://github.com/${report.org}/${esc(r.repo)}/${kind}">${n ?? 0}</a></td>`
     return `<tr>
       <td><a href="https://github.com/${report.org}/${esc(r.repo)}">${esc(r.repo)}</a></td>
       <td class="tier tier-${esc(r.tier)}">${esc(r.tier)}</td>
       <td>${esc(r.npm_version ?? '–')} / ${esc(r.go_version ?? '–')}</td>
       ${drift}
+      ${count(r.open_prs, 'pulls')}
+      ${count(r.open_issues, 'issues')}
       <td class="${r.checks.ci_green === null ? 'na' : r.checks.ci_green ? 'ok' : 'bad'}">${ci}</td>
       ${CHECK_COLS.slice(1).map(([k]) => cell(r.checks[k])).join('\n      ')}
       <td class="score">${r.score.pass}/${r.score.known}</td>
@@ -82,7 +86,7 @@ const html = `<!doctype html>
   .na   { color: gray; }
   .tier { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
   .tier-core { color: #8250df; font-weight: 700; }
-  .score { font-variant-numeric: tabular-nums; }
+  .score, .num { font-variant-numeric: tabular-nums; }
   a { color: inherit; }
 </style>
 </head>
@@ -93,10 +97,13 @@ const html = `<!doctype html>
   <a href="https://github.com/${esc(report.org)}/status">how this works</a></div>
 <div class="summary"><strong>${report.summary.fully_compliant}</strong> of
   <strong>${report.summary.total}</strong> repositories fully compliant with the
-  <a href="https://github.com/${esc(report.org)}/.github/blob/main/GOVERNANCE.md">org standard</a>.</div>
+  <a href="https://github.com/${esc(report.org)}/.github/blob/main/GOVERNANCE.md">org standard</a>.
+  <strong>${report.summary.open_prs ?? 0}</strong> open PRs ·
+  <strong>${report.summary.open_issues ?? 0}</strong> open issues across the org.</div>
 <table>
 <thead><tr>
   <th>Repo</th><th>Tier</th><th>npm / go version</th><th>Version sync</th>
+  <th>Open PRs</th><th>Open issues</th>
   ${CHECK_COLS.map(([, label]) => `<th>${label}</th>`).join('')}
   <th>Score</th>
 </tr></thead>
