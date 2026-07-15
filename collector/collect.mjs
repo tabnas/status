@@ -186,7 +186,6 @@ async function inspectRepo(r) {
     ci_green: run ? run.conclusion === 'success' : null, // null = no runs yet
     ci_caller: wf.caller,
     renovate: has('renovate.json') || has('renovate.json5') || has('.github/renovate.json'),
-    release_please: has('release-please-config.json'),
     sha_pinned: wf.usesTotal === 0 ? null : wf.unpinned === 0,
     protected: prot.state === 'unknown' ? null : prot.state === 'protected',
     security_own: has('SECURITY.md') || has('.github/SECURITY.md'),
@@ -196,7 +195,7 @@ async function inspectRepo(r) {
   // Score over checks that apply to package repos and are knowable.
   const scored = INFRA.has(repo)
     ? ['readme', 'license', 'ci_green', 'sha_pinned', 'protected']
-    : ['readme', 'license', 'ci_green', 'ci_caller', 'renovate', 'release_please', 'sha_pinned', 'protected']
+    : ['readme', 'license', 'ci_green', 'ci_caller', 'renovate', 'sha_pinned', 'protected']
   let pass = 0
   let known = 0
   for (const k of scored) {

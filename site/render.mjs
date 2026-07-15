@@ -11,7 +11,6 @@ const CHECK_COLS = [
   ['ci_green', 'CI'],
   ['ci_caller', 'Shared CI'],
   ['renovate', 'Renovate'],
-  ['release_please', 'Release Please'],
   ['sha_pinned', 'Pinned actions'],
   ['protected', 'Protection'],
   ['readme', 'README'],
@@ -115,23 +114,66 @@ ${rows}
 </html>
 `
 
+// --- self-hosted SVG badges (no third-party service like shields.io) -------
+const HEX = {
+  brightgreen: '#3ba51a', green: '#3ba51a', yellow: '#c9a400', red: '#d33',
+  lightgrey: '#9f9f9f', blue: '#007ec6', go: '#00add8',
+}
+// Flat badge, self-contained SVG. Width is estimated from text length.
+function badgeSvg(label, message, colorKey) {
+  const color = HEX[colorKey] || colorKey || HEX.brightgreen
+  const e = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  label = e(label); message = e(message)
+  const cw = 6.6, pad = 10
+  const lw = Math.round(label.length * cw + pad)
+  const mw = Math.round(message.length * cw + pad)
+  const w = lw + mw
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="20" role="img" aria-label="${label}: ${message}">
+<title>${label}: ${message}</title>
+<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+<clipPath id="r"><rect width="${w}" height="20" rx="3" fill="#fff"/></clipPath>
+<g clip-path="url(#r)">
+<rect width="${lw}" height="20" fill="#555"/>
+<rect x="${lw}" width="${mw}" height="20" fill="${color}"/>
+<rect width="${w}" height="20" fill="url(#s)"/>
+</g>
+<g fill="#fff" text-anchor="middle" font-family="Verdana,DejaVu Sans,Geneva,sans-serif" font-size="11">
+<text x="${lw / 2}" y="15" fill="#010101" fill-opacity=".3">${label}</text>
+<text x="${lw / 2}" y="14">${label}</text>
+<text x="${lw + mw / 2}" y="15" fill="#010101" fill-opacity=".3">${message}</text>
+<text x="${lw + mw / 2}" y="14">${message}</text>
+</g>
+</svg>`
+}
+
+const INFRA_BADGE = new Set(['.github', 'status', 'admin'])
+
 await mkdir('_site/badges', { recursive: true })
 await writeFile('_site/index.html', html)
 await cp('data/report.json', '_site/data.json')
 
 let badges = 0
+const put = async (name, svg) => { await writeFile(`_site/badges/${name}.svg`, svg); badges++ }
 for (const r of report.repos) {
-  if (r.error || !r.score) continue
-  await writeFile(
-    `_site/badges/${r.repo}.json`,
-    JSON.stringify({
-      schemaVersion: 1,
-      label: 'tabnas standard',
-      message: `${r.score.pass}/${r.score.known}`,
-      color: scoreColor(r),
-    })
-  )
-  badges++
+  if (r.error) continue
+  // CI status
+  const ci = r.checks.ci_green
+  await put(`${r.repo}-ci`, badgeSvg('ci', ci === null ? 'no runs' : ci ? 'passing' : 'failing',
+    ci === null ? 'lightgrey' : ci ? 'green' : 'red'))
+  // npm version (package repos only)
+  if (!INFRA_BADGE.has(r.repo)) {
+    await put(`${r.repo}-npm`, badgeSvg('npm', r.npm_version ? `v${r.npm_version}` : 'unpublished',
+      r.npm_version ? 'blue' : 'lightgrey'))
+  }
+  // go version
+  if (r.go_version) await put(`${r.repo}-go`, badgeSvg('go', `v${r.go_version}`, 'go'))
+  // org-standard compliance score + legacy JSON endpoint
+  if (r.score && r.score.known) {
+    await put(`${r.repo}-standard`, badgeSvg('tabnas standard', `${r.score.pass}/${r.score.known}`, scoreColor(r)))
+    await writeFile(`_site/badges/${r.repo}.json`, JSON.stringify({
+      schemaVersion: 1, label: 'tabnas standard', message: `${r.score.pass}/${r.score.known}`, color: scoreColor(r),
+    }))
+  }
 }
 
-console.log(`Rendered _site/index.html + ${badges} badges`)
+console.log(`Rendered _site/index.html + ${badges} SVG badges`)
