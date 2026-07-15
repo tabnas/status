@@ -25,6 +25,10 @@ const API = 'https://api.github.com'
 // Repos that are infrastructure rather than published packages.
 const INFRA = new Set(['.github', 'status', 'admin'])
 
+// Repos omitted from the report entirely (org meta / the dashboard itself —
+// they are not packages and not meaningfully "compliant" against the standard).
+const EXCLUDE = new Set(['.github', 'status'])
+
 // Tier assignments (mirrors GOVERNANCE.md; authoritative copy will move to
 // Safe Settings config once that lands).
 const CORE = new Set(['parser', 'abnf', 'debug', 'json', 'railroad'])
@@ -55,7 +59,7 @@ async function listRepos() {
         return body
       })
     )
-    return named.filter((r) => !r.archived)
+    return named.filter((r) => !r.archived && !EXCLUDE.has(r.name))
   }
   const repos = []
   for (let page = 1; ; page++) {
@@ -64,7 +68,7 @@ async function listRepos() {
     repos.push(...body)
     if (body.length < 100) break
   }
-  return repos.filter((r) => !r.archived)
+  return repos.filter((r) => !r.archived && !EXCLUDE.has(r.name))
 }
 
 async function tree(repo, branch) {
