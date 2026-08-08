@@ -112,12 +112,21 @@ async function goTag(repo) {
   return versions.at(-1) || null
 }
 
+// Returns the latest published version AND when it was published.
+//
+// The registry's `time` map is keyed by version, so time[latest] is the
+// publish instant of the version we are reporting — not `time.modified`,
+// which also moves for deprecations and dist-tag changes and would show a
+// "last publish" for a release nobody published.
 async function npmVersion(name) {
   try {
     const res = await fetch(`https://registry.npmjs.org/@${ORG}%2f${name}`)
     if (!res.ok) return null
     const body = await res.json()
-    return (body['dist-tags'] && body['dist-tags'].latest) || null
+    const version = (body['dist-tags'] && body['dist-tags'].latest) || null
+    if (!version) return null
+    const published_at = (body.time && body.time[version]) || null
+    return { version, published_at }
   } catch {
     return null
   }
@@ -215,9 +224,10 @@ async function inspectRepo(r) {
     ci: run,
     open_prs,
     open_issues,
-    npm_version: npm,
+    npm_version: npm && npm.version,
+    npm_published_at: (npm && npm.published_at) || null,
     go_version: tag,
-    version_drift: npm && tag ? npm !== tag : null,
+    version_drift: npm && npm.version && tag ? npm.version !== tag : null,
     protection: prot,
     workflow_count: wf.workflows,
     unpinned_actions: wf.unpinned,
