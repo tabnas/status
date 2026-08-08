@@ -25,6 +25,17 @@ function cell(v) {
   return v ? '<td class="ok">✓</td>' : '<td class="bad">✗</td>'
 }
 
+// "YYYY-MM-DD HH:MM" in UTC. Explicitly UTC rather than the builder's local
+// zone: this page is generated on a GitHub runner and read from anywhere, so a
+// local-time stamp would mean a different instant to every reader. The literal
+// Z is dropped from the cell and stated once in the column header.
+function utcStamp(iso) {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toISOString().replace('T', ' ').slice(0, 16)
+}
+
 function scoreColor(r) {
   if (!r.score || r.score.known === 0) return 'lightgrey'
   const ratio = r.score.pass / r.score.known
@@ -35,7 +46,7 @@ const rows = report.repos
   .map((r) => {
     if (r.error) {
       return `<tr><td><a href="https://github.com/${report.org}/${esc(r.repo)}">${esc(r.repo)}</a></td>
-        <td colspan="${CHECK_COLS.length + 6}" class="bad">collect error: ${esc(r.error)}</td></tr>`
+        <td colspan="${CHECK_COLS.length + 7}" class="bad">collect error: ${esc(r.error)}</td></tr>`
     }
     const drift =
       r.version_drift === null
@@ -43,6 +54,10 @@ const rows = report.repos
         : r.version_drift
           ? `<td class="warn" title="npm ${esc(r.npm_version)} vs go ${esc(r.go_version)}">drift</td>`
           : '<td class="ok">✓</td>'
+    const pub = utcStamp(r.npm_published_at)
+    const pubCell = pub
+      ? `<td class="pub"><time datetime="${esc(r.npm_published_at)}">${esc(pub)}</time></td>`
+      : '<td class="na">–</td>'
     const ci = r.ci
       ? `<a href="${esc(r.ci.url)}">${r.ci.conclusion === 'success' ? '✓' : '✗'}</a>`
       : '–'
@@ -53,6 +68,7 @@ const rows = report.repos
       <td class="tier tier-${esc(r.tier)}">${esc(r.tier)}</td>
       <td>${esc(r.npm_version ?? '–')} / ${esc(r.go_version ?? '–')}</td>
       ${drift}
+      ${pubCell}
       ${count(r.open_prs, 'pulls')}
       ${count(r.open_issues, 'issues')}
       <td class="${r.checks.ci_green === null ? 'na' : r.checks.ci_green ? 'ok' : 'bad'}">${ci}</td>
@@ -85,7 +101,10 @@ const html = `<!doctype html>
   .na   { color: gray; }
   .tier { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
   .tier-core { color: #8250df; font-weight: 700; }
-  .score, .num { font-variant-numeric: tabular-nums; }
+  .score, .num, .pub { font-variant-numeric: tabular-nums; }
+  /* Keep the stamp on one line — wrapped between date and time it reads as
+     two values. The table already scrolls sideways when it must. */
+  .pub { white-space: nowrap; }
   a { color: inherit; }
 </style>
 </head>
@@ -102,6 +121,7 @@ const html = `<!doctype html>
 <table>
 <thead><tr>
   <th>Repo</th><th>Tier</th><th>npm / go version</th><th>Version sync</th>
+  <th>Last publish (UTC)</th>
   <th>Open PRs</th><th>Open issues</th>
   ${CHECK_COLS.map(([, label]) => `<th>${label}</th>`).join('')}
   <th>Score</th>
