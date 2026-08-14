@@ -7,14 +7,26 @@ import { mkdir, writeFile, readFile, cp } from 'node:fs/promises'
 
 const report = JSON.parse(await readFile('data/report.json', 'utf8'))
 
+// Org "Definition of Done" checks, then the agent-experience ones (admin
+// ADR-10/11). `title` is the column's tooltip: several of these are not
+// self-explanatory from a two-word header, and a check nobody can interpret
+// gets ignored. A trailing † marks a column that is reported but NOT scored —
+// see the collector's `scored` array for why.
 const CHECK_COLS = [
-  ['ci_green', 'CI'],
-  ['ci_caller', 'Shared CI'],
-  ['renovate', 'Renovate'],
-  ['sha_pinned', 'Pinned actions'],
-  ['protected', 'Protection'],
-  ['readme', 'README'],
-  ['license', 'License'],
+  ['ci_green', 'CI', 'Latest completed run on the default branch succeeded'],
+  ['ci_caller', 'Shared CI', 'Calls the org shared polyglot-ci workflow'],
+  ['renovate', 'Renovate', 'Dependency updates are automated'],
+  ['sha_pinned', 'Pinned actions', 'Every third-party action is pinned to a full commit SHA'],
+  ['protected', 'Protection', 'Default branch is protected'],
+  ['readme', 'README', 'Has README.md'],
+  ['license', 'License', 'Has a LICENSE file'],
+  ['agents_md', 'AGENTS.md', 'Has an agent guide at AGENTS.md (plan B2/B3)'],
+  ['plugin_descriptor', 'Descriptor',
+    'Grammar plugins carry the generated tabnas.plugin.json (plan B1); “–” for repos that are not plugins'],
+  ['error_codes', 'Codes documented †',
+    'Every error code the descriptor declares is also documented in AGENTS.md; “–” when the repo has neither'],
+  ['skills_linked', 'Agent tooling †',
+    'AGENTS.md or README points an agent at @tabnas/skills or @tabnas/mcp'],
 ]
 
 const esc = (s) =>
@@ -90,6 +102,8 @@ const html = `<!doctype html>
   h1 { font-size: 1.4rem; }
   .meta { color: gray; font-size: .85rem; margin-bottom: 1rem; }
   .summary { font-size: 1rem; margin: .5rem 0 1.5rem; }
+  .summary.note { font-size: .85rem; color: gray; margin-top: -1rem; }
+  th[title] { cursor: help; }
   table { border-collapse: collapse; width: 100%; font-size: .85rem; }
   th, td { border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
            padding: .35rem .5rem; text-align: center; }
@@ -118,12 +132,17 @@ const html = `<!doctype html>
   <a href="https://github.com/${esc(report.org)}/.github/blob/main/GOVERNANCE.md">org standard</a>.
   <strong>${report.summary.open_prs ?? 0}</strong> open PRs ·
   <strong>${report.summary.open_issues ?? 0}</strong> open issues across the org.</div>
+<div class="summary note">Columns marked † are reported but not scored: they
+  track agent-experience work still in progress, so a low count there is a
+  to-do list rather than a regression. Hover any column header for what it
+  checks.</div>
 <table>
 <thead><tr>
   <th>Repo</th><th>Tier</th><th>npm / go version</th><th>Version sync</th>
   <th>Last publish (UTC)</th>
   <th>Open PRs</th><th>Open issues</th>
-  ${CHECK_COLS.map(([, label]) => `<th>${label}</th>`).join('')}
+  ${CHECK_COLS.map(([, label, title]) =>
+    `<th${title ? ` title="${esc(title)}"` : ''}>${esc(label)}</th>`).join('')}
   <th>Score</th>
 </tr></thead>
 <tbody>

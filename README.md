@@ -12,12 +12,31 @@ Everything is generated — nothing here is hand-edited.
    `data/report.json`: per-repo results against the org
    ["Definition of Done"](https://github.com/tabnas/.github/blob/main/GOVERNANCE.md) —
    CI status, shared-CI adoption, Renovate, Release Please, npm↔Go release
-   drift, SHA-pinned actions, branch protection, docs.
+   drift, SHA-pinned actions, branch protection, docs — plus the
+   agent-experience checks below.
 2. **[`site/render.mjs`](site/render.mjs)** renders `data/report.json` into a
    static dashboard under `_site/`, plus a
    [shields.io endpoint badge](https://shields.io/badges/endpoint-badge)
    per repo at `_site/badges/<repo>.json`.
 3. A scheduled workflow runs both daily and deploys `_site/` to GitHub Pages.
+
+## Agent-experience checks
+
+From the org's agent-experience programme (admin ADR-10/11). They answer one
+question per repo: **can an agent that lands here work effectively?**
+
+| Check | What it means | Scored |
+|---|---|---|
+| `agents_md` | Has an agent guide at `AGENTS.md` | package repos only |
+| `plugin_descriptor` | Grammar plugins carry the generated `tabnas.plugin.json`. `–` for the engine, the tools, and anything that is not a plugin — derivability is not eligibility | package repos only |
+| `error_codes` | Every error code the descriptor declares is also documented in `AGENTS.md`. The descriptor is generated and the guide is written, so this is where they can silently disagree | no |
+| `skills_linked` | `AGENTS.md` or `README.md` points an agent at `@tabnas/skills` or `@tabnas/mcp`, so the fleet's agent tooling is discoverable from the repo | no |
+
+**Not every check is scored, on purpose.** A check that a repo was never
+expected to pass is a to-do list, not a regression — scoring one would move
+every repo's number without anything having got worse. The unscored columns
+are marked † in the dashboard. A check reports `–` (null) where it does not
+apply, and null never counts for or against a score.
 
 ## Run locally
 
