@@ -33,6 +33,20 @@ const EXCLUDE = new Set(['.github', 'status'])
 // Safe Settings config once that lands).
 const CORE = new Set(['parser', 'abnf', 'debug', 'json', 'railroad'])
 
+// Repos that are NOT grammar plugins, so the plugin-descriptor check does not
+// apply to them and is reported as "–" rather than a failure. Mirrors the
+// exclusions recorded in admin's tasks/ax-rollout.tsv: the engine is not a
+// listed plugin, and tools are not plugins — derivability is not eligibility.
+// `web` and `tabnas` (the aggregate checkout) are not packages at all.
+const NOT_PLUGIN = new Set([
+  'parser', 'support', 'railroad', 'jsonic-cli', 'mcp', 'skills', 'web', 'tabnas',
+])
+
+// Agent-experience artifacts a repo may point an agent at. Matching any one
+// means an agent landing in this repo can find the fleet's agent tooling
+// rather than having to already know it exists.
+const SKILLS_MARKERS = ['@tabnas/skills', 'tabnas/skills', '@tabnas/mcp']
+
 const SHA_PIN = /^[0-9a-f]{40}$/
 
 async function gh(path, opts = {}) {
@@ -175,19 +189,65 @@ async function inspectWorkflows(repo, branch, paths) {
   return { workflows: wfPaths.length, caller, usesTotal, unpinned }
 }
 
+// The agent-experience checks (admin ADR-10/11). Three are path predicates
+// like the rest; `error_codes` compares two files that are supposed to agree,
+// which is the whole point of declaring codes in the first place.
+//
+// Each returns null for "does not apply", never false — a repo scoring red
+// for a rule that was never meant to cover it is worse than no column.
+async function inspectAX(repo, branch, paths, has) {
+  const isPlugin = !NOT_PLUGIN.has(repo) && !INFRA.has(repo) && has('ts/package.json')
+
+  const agents_md = has('AGENTS.md')
+  const plugin_descriptor = isPlugin ? has('tabnas.plugin.json') : null
+
+  // Only fetch what the predicates above say is worth fetching.
+  const agentsText = agents_md ? await fileText(repo, 'AGENTS.md', branch) : null
+  const descriptorText =
+    plugin_descriptor ? await fileText(repo, 'tabnas.plugin.json', branch) : null
+
+  // Does the repo's own guide document every code its descriptor declares?
+  // The descriptor is generated and the guide is written, so this is the one
+  // place they can silently disagree — and AGENTS.md's Error codes section
+  // exists precisely to be kept in step with it. A plugin that declares no
+  // codes has nothing to disagree about, so it passes.
+  let error_codes = null
+  if (descriptorText && agentsText) {
+    try {
+      const declared = JSON.parse(descriptorText).errorCodes
+      if (Array.isArray(declared)) {
+        error_codes = declared.every((code) => agentsText.includes(code))
+      }
+    } catch {
+      error_codes = false // a descriptor that will not parse is a failure
+    }
+  }
+
+  // Can an agent that lands here find the fleet's Skills and MCP server?
+  let skills_linked = null
+  if (agentsText || has('README.md')) {
+    const readmeText = agentsText ? null : await fileText(repo, 'README.md', branch)
+    const text = `${agentsText ?? ''}\n${readmeText ?? ''}`
+    skills_linked = SKILLS_MARKERS.some((marker) => text.includes(marker))
+  }
+
+  return { agents_md, plugin_descriptor, error_codes, skills_linked }
+}
+
 async function inspectRepo(r) {
   const repo = r.name
   const branch = r.default_branch
   const paths = await tree(repo, branch)
   const has = (p) => paths.includes(p)
 
-  const [run, tag, npm, prot, wf, openPRs] = await Promise.all([
+  const [run, tag, npm, prot, wf, openPRs, ax] = await Promise.all([
     latestRun(repo, branch),
     goTag(repo),
     INFRA.has(repo) ? null : npmVersion(repo),
     protection(repo, branch),
     inspectWorkflows(repo, branch, paths),
     openPullCount(repo),
+    inspectAX(repo, branch, paths, has),
   ])
 
   const open_prs = openPRs
@@ -203,12 +263,23 @@ async function inspectRepo(r) {
     protected: prot.state === 'unknown' ? null : prot.state === 'protected',
     security_own: has('SECURITY.md') || has('.github/SECURITY.md'),
     contributing_own: has('CONTRIBUTING.md') || has('.github/CONTRIBUTING.md'),
+    ...ax,
   }
 
   // Score over checks that apply to package repos and are knowable.
+  //
+  // Of the agent-experience checks, only the two that are settled policy for
+  // PACKAGE repos are scored: AGENTS.md was rolled out across them (plan
+  // B2/B3) and every eligible plugin carries a descriptor (B1), so a red cell
+  // there is a real regression. The rest are reported as columns but NOT
+  // scored — `error_codes` and `skills_linked` describe work in progress, and
+  // AGENTS.md was never stated policy for infra repos, so scoring either would
+  // move a number without anything having got worse. A column is still how the
+  // gap stays visible.
   const scored = INFRA.has(repo)
     ? ['readme', 'license', 'ci_green', 'sha_pinned', 'protected']
-    : ['readme', 'license', 'ci_green', 'ci_caller', 'renovate', 'sha_pinned', 'protected']
+    : ['readme', 'license', 'ci_green', 'ci_caller', 'renovate', 'sha_pinned', 'protected',
+       'agents_md', 'plugin_descriptor']
   let pass = 0
   let known = 0
   for (const k of scored) {
