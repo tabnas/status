@@ -1,15 +1,18 @@
 # Target: tabnas/status -> .github/workflows/status.yml
 #
-# Collects org status daily and deploys the dashboard to GitHub Pages.
-# One-time setup in tabnas/status: Settings -> Pages -> Source: GitHub Actions.
-# Optional: add a fine-grained org read token as STATUS_READ_TOKEN so
-# branch-protection checks stop reporting "unknown".
+# Rebuilds the dashboard on org activity (real-time via repository_dispatch),
+# hourly (safety net), on demand, and on push. One-time setup in tabnas/status:
+# Settings -> Pages -> Source: GitHub Actions.
+# Optional: fine-grained org read token as STATUS_READ_TOKEN so branch-
+# protection checks stop reporting "unknown".
 
 name: status
 
 on:
+  repository_dispatch:
+    types: [org-activity]
   schedule:
-    - cron: "17 5 * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
   push:
     branches: [ main ]
@@ -19,16 +22,18 @@ permissions:
   pages: write
   id-token: write
 
+# Coalesce bursts: a newer refresh cancels an in-flight one so we always
+# converge to the latest state without queueing dozens of full sweeps.
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: status-refresh
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444  # v5.0.0
         with:
           node-version: 24
       - name: Collect
@@ -37,7 +42,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.STATUS_READ_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Render
         run: node site/render.mjs
-      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9  # v5.0.0
         with:
           path: _site
 
@@ -49,4 +54,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128  # v5.0.0
