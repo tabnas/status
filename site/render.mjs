@@ -95,48 +95,101 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Live health, release, and compliance evidence for every Tabnas repository.">
 <title>Tabnas org status</title>
 <style>
-  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
-  body { margin: 2rem auto; max-width: 72rem; padding: 0 1rem; }
-  h1 { font-size: 1.4rem; }
-  .meta { color: gray; font-size: .85rem; margin-bottom: 1rem; }
-  .summary { font-size: 1rem; margin: .5rem 0 1.5rem; }
-  .summary.note { font-size: .85rem; color: gray; margin-top: -1rem; }
-  th[title] { cursor: help; }
-  table { border-collapse: collapse; width: 100%; font-size: .85rem; }
-  th, td { border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-           padding: .35rem .5rem; text-align: center; }
-  td:first-child, th:first-child { text-align: left; }
-  th { position: sticky; top: 0; background: Canvas; }
-  .ok   { color: #1a7f37; }
-  .bad  { color: #cf222e; font-weight: 600; }
-  .warn { color: #9a6700; font-weight: 600; }
-  .na   { color: gray; }
-  .tier { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
-  .tier-core { color: #8250df; font-weight: 700; }
-  .score, .num, .pub { font-variant-numeric: tabular-nums; }
-  /* Keep the stamp on one line — wrapped between date and time it reads as
-     two values. The table already scrolls sideways when it must. */
-  .pub { white-space: nowrap; }
+  :root {
+    color-scheme: dark;
+    --ink: #f4f1e8;
+    --muted: #a9aaa4;
+    --ground: #101311;
+    --panel: #171b18;
+    --line: #303630;
+    --lime: #c8f169;
+    --mint: #68d9b3;
+    --orange: #ff9b62;
+    --red: #ff7f88;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--ground); }
+  body { margin: 0; color: var(--ink); background: radial-gradient(circle at 82% 4%, #263827 0, transparent 28rem), var(--ground); }
   a { color: inherit; }
+  .hero { padding: 1.25rem max(1.5rem, calc((100vw - 1180px) / 2)); border-bottom: 1px solid var(--line); }
+  nav { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: .9rem; }
+  .nav-links { display: flex; gap: 1rem; }
+  .brand { color: var(--ink); font-weight: 700; text-decoration: none; letter-spacing: -.02em; }
+  .brand::before { content: ""; display: inline-block; width: .75rem; height: .75rem; margin-right: .55rem; border: 2px solid var(--lime); border-radius: 50%; vertical-align: -.08rem; }
+  .hero-copy { max-width: 900px; padding: 5rem 0 3rem; }
+  .eyebrow { margin: 0 0 .8rem; color: var(--lime); font: 700 .72rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; }
+  h1, p { margin-top: 0; }
+  h1 { margin-bottom: 1.3rem; font-size: clamp(3rem, 7vw, 6.8rem); line-height: .92; letter-spacing: -.065em; }
+  .lede { max-width: 720px; color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.35rem); line-height: 1.55; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; border-top: 1px solid var(--line); }
+  .summary-grid div { padding: 1.25rem 1rem 1.25rem 0; }
+  .summary-grid dt { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .11em; }
+  .summary-grid dd { margin: .25rem 0 0; font: 600 1.45rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+  main { max-width: 1180px; margin: auto; padding: 5rem 1.5rem 6rem; }
+  .meta { color: var(--muted); font: .8rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin-bottom: 1.4rem; }
+  .summary-copy { max-width: 760px; font-size: 1rem; line-height: 1.6; margin: 0 0 1.5rem; }
+  .summary-copy.note { color: var(--muted); font-size: .88rem; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: .8rem; background: var(--panel); }
+  th[title] { cursor: help; }
+  table { border-collapse: collapse; width: 100%; min-width: 1120px; font-size: .82rem; }
+  th, td { padding: .85rem .7rem; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td:first-child, th:first-child { text-align: left; }
+  th { position: sticky; top: 0; color: var(--muted); background: #131613; font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; }
+  tbody tr:hover { background: #1b211c; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td:first-child a { color: var(--ink); font-weight: 650; text-decoration-color: var(--line); }
+  .ok   { color: var(--lime); }
+  .bad  { color: var(--red); font-weight: 600; }
+  .warn { color: var(--orange); font-weight: 600; }
+  .na   { color: var(--muted); }
+  .tier { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }
+  .tier-core { color: var(--mint); font-weight: 700; }
+  .score, .num, .pub { font-variant-numeric: tabular-nums; }
+  .pub { white-space: nowrap; }
+  footer { max-width: 1180px; margin: auto; padding: 0 1.5rem 4rem; display: flex; justify-content: space-between; gap: 2rem; color: var(--muted); font-size: .9rem; }
+  @media (max-width: 700px) {
+    nav { align-items: flex-start; }
+    .nav-links { flex-direction: column; align-items: flex-end; gap: .35rem; }
+    .hero-copy { padding: 4rem 0 2.5rem; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    main { padding-top: 3.5rem; }
+    footer { flex-direction: column; }
+  }
 </style>
 </head>
 <body>
-<h1>Tabnas org status</h1>
-<div class="meta">Generated ${esc(report.generated)} ·
-  <a href="data.json">raw data</a> ·
-  <a href="https://github.com/${esc(report.org)}/status">how this works</a></div>
-<div class="summary"><strong>${report.summary.fully_compliant}</strong> of
-  <strong>${report.summary.total}</strong> repositories fully compliant with the
+<header class="hero">
+  <nav>
+    <a class="brand" href="./">Tabnas Status</a>
+    <div class="nav-links">
+      <a href="https://tabnas.dev/">tabnas.dev ↗</a>
+      <a href="https://tabnas.github.io/measure/">Measure ↗</a>
+      <a href="https://github.com/${esc(report.org)}/status">Repository ↗</a>
+    </div>
+  </nav>
+  <div class="hero-copy">
+    <p class="eyebrow">Health, not guesswork</p>
+    <h1>One dashboard for every repository.</h1>
+    <p class="lede">Live CI, release, version-sync, maintenance, and agent-experience evidence for the Tabnas organisation.</p>
+  </div>
+  <dl class="summary-grid" aria-label="Organisation summary">
+    <div><dt>Repositories</dt><dd>${report.summary.total}</dd></div>
+    <div><dt>Fully compliant</dt><dd>${report.summary.fully_compliant}</dd></div>
+    <div><dt>Open PRs</dt><dd>${report.summary.open_prs ?? 0}</dd></div>
+    <div><dt>Open issues</dt><dd>${report.summary.open_issues ?? 0}</dd></div>
+  </dl>
+</header>
+<main>
+<div class="meta">Generated ${esc(report.generated)} · <a href="data.json">Raw data ↗</a></div>
+<p class="summary-copy">Each repository is checked against the
   <a href="https://github.com/${esc(report.org)}/.github/blob/main/GOVERNANCE.md">org standard</a>.
-  <strong>${report.summary.open_prs ?? 0}</strong> open PRs ·
-  <strong>${report.summary.open_issues ?? 0}</strong> open issues across the org.</div>
-<div class="summary note">Columns marked † are reported but not scored: they
-  track agent-experience work still in progress, so a low count there is a
-  to-do list rather than a regression. Hover any column header for what it
-  checks.</div>
-<table>
+  The collector reads the GitHub API; this table is generated rather than hand-maintained.</p>
+<p class="summary-copy note">Columns marked † are reported but not scored: they track agent-experience work still in progress, so a low count there is a to-do list rather than a regression. Hover any column header for what it checks.</p>
+<div class="table-wrap"><table>
 <thead><tr>
   <th>Repo</th><th>Tier</th><th>npm / go version</th><th>Version sync</th>
   <th>Last publish (UTC)</th>
@@ -148,7 +201,9 @@ const html = `<!doctype html>
 <tbody>
 ${rows}
 </tbody>
-</table>
+</table></div>
+</main>
+<footer><p>Operational state describes the latest completed collection.</p><a href="https://github.com/${esc(report.org)}/status">Read how the dashboard works ↗</a></footer>
 </body>
 </html>
 `
