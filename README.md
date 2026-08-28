@@ -38,6 +38,13 @@ every repo's number without anything having got worse. The unscored columns
 are marked † in the dashboard. A check reports `–` (null) where it does not
 apply, and null never counts for or against a score.
 
+`protected` is unscored **temporarily**, for the same reason. Branch
+protection is not configured on any repo yet — the policy exists but is still
+staged in [`admin/allstar/`](https://github.com/tabnas/admin) awaiting a
+one-time deploy. Scored, it held every repo at "not compliant" and masked the
+checks that had actually moved. Restore it to the collector's `scored` lists
+once Allstar is live.
+
 ## Run locally
 
 ```bash

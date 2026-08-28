@@ -17,7 +17,8 @@ const CHECK_COLS = [
   ['ci_caller', 'Shared CI', 'Calls the org shared polyglot-ci workflow'],
   ['renovate', 'Renovate', 'Dependency updates are automated'],
   ['sha_pinned', 'Pinned actions', 'Every third-party action is pinned to a full commit SHA'],
-  ['protected', 'Protection', 'Default branch is protected'],
+  ['protected', 'Protection †',
+    'Default branch is protected. Unscored while the Allstar policy in admin/allstar/ is still staged and no repo has protection configured'],
   ['readme', 'README', 'Has README.md'],
   ['license', 'License', 'Has a LICENSE file'],
   ['agents_md', 'AGENTS.md', 'Has an agent guide at AGENTS.md (plan B2/B3)'],
@@ -188,7 +189,7 @@ const html = `<!doctype html>
 <p class="summary-copy">Each repository is checked against the
   <a href="https://github.com/${esc(report.org)}/.github/blob/main/GOVERNANCE.md">org standard</a>.
   The collector reads the GitHub API; this table is generated rather than hand-maintained.</p>
-<p class="summary-copy note">Columns marked † are reported but not scored: they track agent-experience work still in progress, so a low count there is a to-do list rather than a regression. Hover any column header for what it checks.</p>
+<p class="summary-copy note">Columns marked † are reported but not scored: they track work still in progress — the agent-experience rollout, and branch protection while the Allstar policy is staged but not yet deployed — so a low count there is a to-do list rather than a regression. Hover any column header for what it checks.</p>
 <div class="table-wrap"><table>
 <thead><tr>
   <th>Repo</th><th>Tier</th><th>npm / go version</th><th>Version sync</th>

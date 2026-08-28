@@ -283,9 +283,18 @@ async function inspectRepo(r) {
   // AGENTS.md was never stated policy for infra repos, so scoring either would
   // move a number without anything having got worse. A column is still how the
   // gap stays visible.
+  //
+  // `protected` is TEMPORARILY unscored. Branch protection is not configured
+  // on any repo yet: the policy is written but still staged in admin/allstar/
+  // and needs a one-time deploy (a public tabnas/.allstar repo plus the app
+  // install). Scoring a check that no repo was ever set up to pass held every
+  // repo at "not compliant" and hid the checks that had actually moved --
+  // the same reasoning that keeps the agent-experience rollout unscored.
+  // Restore it to both lists once Allstar is deployed; that is the point at
+  // which a red cell here becomes a real regression.
   const scored = INFRA.has(repo)
-    ? ['readme', 'license', 'ci_green', 'sha_pinned', 'protected']
-    : ['readme', 'license', 'ci_green', 'ci_caller', 'renovate', 'sha_pinned', 'protected',
+    ? ['readme', 'license', 'ci_green', 'sha_pinned']
+    : ['readme', 'license', 'ci_green', 'ci_caller', 'renovate', 'sha_pinned',
        'agents_md', 'plugin_descriptor']
   let pass = 0
   let known = 0
