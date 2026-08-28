@@ -22,8 +22,11 @@ const ORG = process.env.ORG || 'tabnas'
 const TOKEN = process.env.GITHUB_TOKEN || ''
 const API = 'https://api.github.com'
 
-// Repos that are infrastructure rather than published packages.
-const INFRA = new Set(['.github', 'status', 'admin'])
+// Repos that are infrastructure rather than published packages. `measure`
+// (the benchmark harness) and `skills` (the Agent Skills bundle) both declare
+// `"private": true` and are published nowhere — scoring them on package rules
+// like the shared-CI caller measured a standard they were never under.
+const INFRA = new Set(['.github', 'status', 'admin', 'measure', 'skills'])
 
 // Repos omitted from the report entirely (org meta / the dashboard itself —
 // they are not packages and not meaningfully "compliant" against the standard).
@@ -38,8 +41,12 @@ const CORE = new Set(['parser', 'abnf', 'debug', 'json', 'railroad'])
 // exclusions recorded in admin's tasks/ax-rollout.tsv: the engine is not a
 // listed plugin, and tools are not plugins — derivability is not eligibility.
 // `web` and `tabnas` (the aggregate checkout) are not packages at all.
+// `lsp` is the odd one out: it IS a published package (@tabnas/lsp), so it is
+// not infra — but it is a language server over the grammars, not a grammar
+// plugin, so no descriptor is owed.
 const NOT_PLUGIN = new Set([
   'parser', 'support', 'railroad', 'jsonic-cli', 'mcp', 'skills', 'web', 'tabnas',
+  'lsp',
 ])
 
 // Agent-experience artifacts a repo may point an agent at. Matching any one
