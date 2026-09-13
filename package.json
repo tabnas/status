@@ -1,0 +1,11 @@
+{
+  "name": "tabnas-status",
+  "private": true,
+  "description": "Public health and compliance dashboard for the tabnas organization.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test scripts/docs.test.mjs",
+    "collect": "node collector/collect.mjs",
+    "site": "node site/render.mjs"
+  }
+}

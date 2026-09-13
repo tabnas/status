@@ -1,0 +1,15 @@
+Allstar
+SHAs
+[Rr]epo
+[Rr]epos
+[Tt]abnas
+config
+deps
+derivability
+lockfile
+lockfiles
+npm
+org
+stderr
+stdout
+unscored
