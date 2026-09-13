@@ -189,7 +189,7 @@ const html = `<!doctype html>
 <p class="summary-copy">Each repository is checked against the
   <a href="https://github.com/${esc(report.org)}/.github/blob/main/GOVERNANCE.md">org standard</a>.
   The collector reads the GitHub API; this table is generated rather than hand-maintained.</p>
-<p class="summary-copy note">Columns marked † are reported but not scored: they track work still in progress — the agent-experience rollout, and branch protection while the Allstar policy is staged but not yet deployed — so a low count there is a to-do list rather than a regression. Hover any column header for what it checks.</p>
+<p class="summary-copy note">Columns marked † are reported but not scored: they track work still in progress (the agent-experience rollout, and branch protection while the Allstar policy is staged but not yet deployed) so a low count there is a to-do list rather than a regression. Hover any column header for what it checks.</p>
 <div class="table-wrap"><table>
 <thead><tr>
   <th>Repo</th><th>Tier</th><th>npm / go version</th><th>Version sync</th>

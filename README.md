@@ -5,14 +5,14 @@ Public health & compliance dashboard for the
 
 ## How it works
 
-Everything is generated — nothing here is hand-edited.
+Everything is generated: nothing here is hand-edited.
 
 1. **[`collector/collect.mjs`](collector/collect.mjs)** (Node, zero deps)
    sweeps every public org repo via the GitHub API and writes
    `data/report.json`: per-repo results against the org
-   ["Definition of Done"](https://github.com/tabnas/.github/blob/main/GOVERNANCE.md) —
+   ["Definition of Done"](https://github.com/tabnas/.github/blob/main/GOVERNANCE.md):
    CI status, shared-CI adoption, Renovate, Release Please, npm↔Go release
-   drift, SHA-pinned actions, branch protection, docs — plus the
+   drift, SHA-pinned actions, branch protection and docs, plus the
    agent-experience checks below.
 2. **[`site/render.mjs`](site/render.mjs)** renders `data/report.json` into a
    static dashboard under `_site/`, plus a
@@ -28,18 +28,18 @@ question per repo: **can an agent that lands here work effectively?**
 | Check | What it means | Scored |
 |---|---|---|
 | `agents_md` | Has an agent guide at `AGENTS.md` | package repos only |
-| `plugin_descriptor` | Grammar plugins carry the generated `tabnas.plugin.json`. `–` for the engine, the tools, and anything that is not a plugin — derivability is not eligibility | package repos only |
+| `plugin_descriptor` | Grammar plugins carry the generated `tabnas.plugin.json`. `–` for the engine, the tools, and anything that is not a plugin, since derivability is not eligibility | package repos only |
 | `error_codes` | Every error code the descriptor declares is also documented in `AGENTS.md`. The descriptor is generated and the guide is written, so this is where they can silently disagree | no |
 | `skills_linked` | `AGENTS.md` or `README.md` points an agent at `@tabnas/skills` or `@tabnas/mcp`, so the fleet's agent tooling is discoverable from the repo | no |
 
 **Not every check is scored, on purpose.** A check that a repo was never
-expected to pass is a to-do list, not a regression — scoring one would move
+expected to pass is a to-do list, not a regression, and scoring one would move
 every repo's number without anything having got worse. The unscored columns
 are marked † in the dashboard. A check reports `–` (null) where it does not
 apply, and null never counts for or against a score.
 
 `protected` is unscored **temporarily**, for the same reason. Branch
-protection is not configured on any repo yet — the policy exists but is still
+protection is not configured on any repo yet: the policy exists but is still
 staged in [`admin/allstar/`](https://github.com/tabnas/admin) awaiting a
 one-time deploy. Scored, it held every repo at "not compliant" and masked the
 checks that had actually moved. Restore it to the collector's `scored` lists
