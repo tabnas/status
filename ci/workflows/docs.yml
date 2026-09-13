@@ -86,6 +86,13 @@ jobs:
       - name: Prose gate
         run: vale --minAlertLevel=error $(node scripts/gated-docs.mjs)
 
+      # .vale.ini justifies every demoted rule with the number of alerts
+      # it produced here, and docs/STYLE-GUIDE.md repeats the total. Both
+      # were written by hand, and the two totals drifted apart before
+      # anything compared them to a run. This step does.
+      - name: Recorded alert counts
+        run: node scripts/vale-counts.mjs
+
       # Warnings and suggestions are reported for the author to read and
       # do not block; see the demotion notes in .vale.ini for what sits
       # at which level and why.
