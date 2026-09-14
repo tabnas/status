@@ -5,3 +5,6 @@ node_modules/
 # Downloaded by `vale sync`. The vocabulary under .vale/styles/config/
 # and the house rule under .vale/styles/Tabnas/ are ours and committed.
 /.vale/styles/Google/
+
+# Written by the counts script while measuring, removed after.
+.vale-counts.ini

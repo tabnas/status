@@ -1,4 +1,4 @@
-.PHONY: test prose collect site
+.PHONY: test prose prose-counts collect site
 
 test:
 	npm test
@@ -15,3 +15,9 @@ site:
 # `vale sync`. Warnings are advisory, errors fail.
 prose:
 	vale --minAlertLevel=error $$(node scripts/gated-docs.mjs)
+	node scripts/vale-counts.mjs
+
+# Re-measure what .vale.ini and the style guide record, after
+# a change to the pages or to the rules moves the numbers.
+prose-counts:
+	node scripts/vale-counts.mjs --write
