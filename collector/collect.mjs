@@ -3,7 +3,7 @@
 //
 // Sweeps every public repo in the org via the GitHub API and writes
 // data/report.json: per-repo compliance against the org "Definition of
-// Done" (CI green, shared-CI caller adopted, Renovate, Release Please,
+// Done" (CI green, shared-CI caller adopted, Renovate,
 // docs, SHA-pinned actions, branch protection, npm/Go release drift).
 //
 // Zero dependencies; needs Node >= 20 (global fetch).
