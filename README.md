@@ -11,7 +11,7 @@ Everything is generated: nothing here is hand-edited.
    sweeps every public org repo via the GitHub API and writes
    `data/report.json`: per-repo results against the org
    ["Definition of Done"](https://github.com/tabnas/.github/blob/main/GOVERNANCE.md):
-   CI status, shared-CI adoption, Renovate, Release Please, npm↔Go release
+   CI status, shared-CI adoption, Renovate, npm↔Go release
    drift, SHA-pinned actions, branch protection and docs, plus the
    agent-experience checks below.
 2. **[`site/render.mjs`](site/render.mjs)** renders `data/report.json` into a
@@ -75,7 +75,6 @@ Each repo can show its compliance in its README:
 | CI | Latest completed workflow run on the default branch succeeded |
 | Shared CI | Repo calls the reusable `tabnas/.github` polyglot-ci workflow |
 | Renovate | `renovate.json` present (extends the org preset) |
-| Release Please | `release-please-config.json` present |
 | Version sync | npm `@tabnas/<repo>` latest == latest `go/vX.Y.Z` tag |
 | Pinned actions | All third-party action refs pinned to commit SHAs |
 | Protection | Default branch has branch protection (needs org token to read) |
